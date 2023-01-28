@@ -12,7 +12,7 @@
 package model
 
 import (
-	genconfig "github.com/jaypipes/grm-generate/pkg/config"
+	genconfig "github.com/anydotcloud/grm-generate/pkg/config"
 )
 
 // ResourceDefinition describes a single top-level resource in a cloud service

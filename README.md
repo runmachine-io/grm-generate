@@ -1,2 +1,3 @@
 # grm-generate
-Code generator for github.com/jaypipes/grm
+
+Code generator for github.com/anydotcloud/grm

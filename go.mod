@@ -1,8 +1,8 @@
-module github.com/jaypipes/grm-generate
+module github.com/anydotcloud/grm-generate
 
 go 1.19
 
-require github.com/jaypipes/grm v0.0.0-20230117171517-f461349cd86a
+require github.com/anydotcloud/grm v0.0.0-20230128222307-3e6973e34137
 
 require (
 	github.com/dlclark/regexp2 v1.8.0 // indirect

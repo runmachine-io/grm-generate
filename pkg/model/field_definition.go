@@ -12,7 +12,7 @@
 package model
 
 import (
-	"github.com/jaypipes/grm/pkg/types/resource/schema"
+	"github.com/anydotcloud/grm/pkg/types/resource/schema"
 )
 
 // FieldDefinition represents a type of Field in a Resource's Schema. Note that
