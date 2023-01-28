@@ -12,9 +12,9 @@
 package model
 
 import (
-	genconfig "github.com/jaypipes/grm-generate/pkg/config"
-	"github.com/jaypipes/grm/pkg/names"
-	"github.com/jaypipes/grm/pkg/path/fieldpath"
+	genconfig "github.com/anydotcloud/grm-generate/pkg/config"
+	"github.com/anydotcloud/grm/pkg/names"
+	"github.com/anydotcloud/grm/pkg/path/fieldpath"
 )
 
 // Field represents a single field in the Resource's Schema.
