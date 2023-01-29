@@ -13,11 +13,13 @@ package aws
 
 import (
 	"context"
+	"fmt"
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
-	"github.com/anydotcloud/grm-generate/pkg/config"
 	"github.com/anydotcloud/grm-generate/pkg/discover"
+	"github.com/anydotcloud/grm-generate/pkg/git"
+	"github.com/anydotcloud/grm-generate/pkg/log"
 	"github.com/anydotcloud/grm-generate/pkg/model"
 )
 
@@ -25,29 +27,39 @@ import (
 // API model loader. It implements the `pkg/discover.DiscoversResources`
 // interface.
 type discoverer struct {
-	cfg      config.Config
-	basePath string
-	loader   *awssdkmodel.Loader
+	opts   option
+	loader *awssdkmodel.Loader
+	repo   *git.Repository
 }
 
 func (d *discoverer) DiscoverResources(
 	ctx context.Context,
-) []model.ResourceDefinition {
+) ([]model.ResourceDefinition, error) {
+	var err error
+	l := log.FromContext(ctx)
+	if d.repo == nil {
+		l.Debug("loading git repository", "cache_path", d.opts.cachePath)
+		d.repo, err = git.Open(d.opts.cachePath)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"error loading repository from %s: %v",
+				d.opts.cachePath, err,
+			)
+		}
+	}
+	d.loader = &awssdkmodel.Loader{
+		BaseImport:            d.opts.cachePath,
+		IgnoreUnsupportedAPIs: true,
+	}
 	res := []model.ResourceDefinition{}
-	return res
+	return res, nil
 }
 
 // New returns a new DiscoversResources implementer for AWS resources
 func New(
-	basePath string,
-	cfg config.Config,
+	opts ...option,
 ) discover.DiscoversResources {
 	return &discoverer{
-		cfg:      cfg,
-		basePath: basePath,
-		loader: &awssdkmodel.Loader{
-			BaseImport:            basePath,
-			IgnoreUnsupportedAPIs: true,
-		},
+		opts: mergeOptions(opts),
 	}
 }
