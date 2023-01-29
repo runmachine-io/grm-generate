@@ -13,6 +13,8 @@
 package git
 
 import (
+	"context"
+
 	gogit "gopkg.in/src-d/go-git.v4"
 	gogitplumbing "gopkg.in/src-d/go-git.v4/plumbing"
 
@@ -50,11 +52,35 @@ func getRepositoryTagRef(repo *Repository, tagName string) (*gogitplumbing.Refer
 	return nil, errors.New("tag reference not found")
 }
 
-// CheckoutRepositoryTag checkouts a repository tag by looking for the tag
+// FetchTags fetches a repository's remote tags.
+//
+// Calling this function is equivalent to executing `git -C $path fetch --all
+// --tags`
+func FetchTags(
+	ctx context.Context,
+	repo *Repository,
+) error {
+	err := repo.FetchContext(ctx, &gogit.FetchOptions{
+		Progress: nil,
+		Tags:     gogit.AllTags,
+	})
+	// weirdly go-git returns a error "Already up to date" when all tags
+	// are already fetched. We should ignore this error.
+	if err == gogit.NoErrAlreadyUpToDate {
+		return nil
+	}
+	return err
+}
+
+// CheckoutTag checkouts a repository tag by looking for the tag
 // reference then calling the checkout function.
 //
 // Calling This function is equivalent to executing `git checkout tags/$tag`
-func CheckoutRepositoryTag(repo *Repository, tag string) error {
+func CheckoutTag(
+	ctx context.Context,
+	repo *Repository,
+	tag string,
+) error {
 	tagRef, err := getRepositoryTagRef(repo, tag)
 	if err != nil {
 		return err
@@ -68,4 +94,26 @@ func CheckoutRepositoryTag(repo *Repository, tag string) error {
 		Hash: tagRef.Hash(),
 	})
 	return err
+}
+
+// Clone clones a git repository into a given directory and returns a
+// Repository object that can be used to manipulate that clone'd repo.
+//
+// Calling his function is equivalent to executing `git clone $repositoryURL
+// $path`
+func Clone(
+	ctx context.Context,
+	path,
+	repositoryURL string,
+) (*Repository, error) {
+	if _, err := gogit.PlainCloneContext(ctx, path, false, &gogit.CloneOptions{
+		URL:      repositoryURL,
+		Progress: nil,
+		// Clone and fetch all tags
+		Tags: gogit.AllTags,
+	}); err != nil {
+		return nil, err
+
+	}
+	return Open(path)
 }
