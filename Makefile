@@ -1,5 +1,9 @@
 SHELL := /bin/bash # Use bash syntax
 
+# We need to use the codegen tag when building and testing because the
+# aws-sdk-go/private/model/api package is gated behind a build tag "codegen"...
+GO_TAGS=-tags codegen
+
 .PHONY: all test
 
 all: test

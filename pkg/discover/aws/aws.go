@@ -16,6 +16,7 @@ import (
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
+	"github.com/anydotcloud/grm-generate/pkg/config"
 	"github.com/anydotcloud/grm-generate/pkg/discover"
 	"github.com/anydotcloud/grm-generate/pkg/model"
 )
@@ -24,7 +25,7 @@ import (
 // API model loader. It implements the `pkg/discover.DiscoversResources`
 // interface.
 type discoverer struct {
-	cfg      ackgenconfig.Config
+	cfg      config.Config
 	basePath string
 	loader   *awssdkmodel.Loader
 }
@@ -32,14 +33,14 @@ type discoverer struct {
 func (d *discoverer) DiscoverResources(
 	ctx context.Context,
 ) []model.ResourceDefinition {
-	res := model.ResourceDefinition{}
+	res := []model.ResourceDefinition{}
 	return res
 }
 
 // New returns a new DiscoversResources implementer for AWS resources
 func New(
 	basePath string,
-	cfg ackgenconfig.Config,
+	cfg config.Config,
 ) discover.DiscoversResources {
 	return &discoverer{
 		cfg:      cfg,
