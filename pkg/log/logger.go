@@ -6,29 +6,28 @@ import (
 	"github.com/go-logr/logr"
 )
 
-// Logger is a wrapper around a logr.Logger that writes log messages
+// logger is a wrapper around a logr.Logger that writes log messages
 // about the API discovery and code generation process.
-type Logger struct {
+type logger struct {
 	log        logr.Logger
-	res        acktypes.AWSResource
 	blockDepth int
 }
 
 // IsDebugEnabled returns true when the underlying logger is configured to
 // write debug messages, false otherwise.
-func (l *Logger) IsDebugEnabled() bool {
+func (l *logger) IsDebugEnabled() bool {
 	return l.log.V(1).Enabled()
 }
 
 // WithValues adapts the internal logger with a set of additional values
-func (l *Logger) WithValues(
+func (l *logger) WithValues(
 	values ...interface{},
 ) {
 	l.log = l.log.WithValues(values...)
 }
 
 // Debug writes a supplied log message if debug logging is enabled
-func (l *Logger) Debug(
+func (l *logger) Debug(
 	msg string,
 	vals ...interface{},
 ) {
@@ -37,7 +36,7 @@ func (l *Logger) Debug(
 
 // Info writes a supplied log message about a resource that includes a
 // set of standard log values for the resource's kind, namespace, name, etc
-func (l *Logger) Info(
+func (l *logger) Info(
 	msg string,
 	vals ...interface{},
 ) {
@@ -45,7 +44,7 @@ func (l *Logger) Info(
 }
 
 // Enter logs an entry to a function or code block
-func (l *Logger) Enter(
+func (l *logger) Enter(
 	name string, // name of the function or code block we're entering
 	vals ...interface{},
 ) {
@@ -58,7 +57,7 @@ func (l *Logger) Enter(
 }
 
 // Exit logs an exit from a function or code block
-func (l *Logger) Exit(
+func (l *logger) Exit(
 	name string, // name of the function or code block we're exiting
 	err error,
 	vals ...interface{},
@@ -77,7 +76,7 @@ func (l *Logger) Exit(
 
 // Trace logs an entry to a function or code block and returns a functor
 // that can be called to log the exit of the function or code block
-func (l *Logger) Trace(
+func (l *logger) Trace(
 	name string,
 	vals ...interface{},
 ) TraceExiter {
@@ -88,13 +87,13 @@ func (l *Logger) Trace(
 	return f
 }
 
-// New returns a Logger that can write log messages about API discovery and
+// New returns a logger that can write log messages about API discovery and
 // code generation processes.
 func New(
 	log logr.Logger,
 	vals ...interface{},
-) *Logger {
-	return &Logger{
+) *logger {
+	return &logger{
 		log:        log.WithValues(vals...),
 		blockDepth: 0,
 	}

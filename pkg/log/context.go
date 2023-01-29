@@ -23,7 +23,7 @@ const (
 // FromContext returns a `Logger` from a saved key in the request context
 func FromContext(ctx context.Context) Logger {
 	if v := ctx.Value(ContextKey); v != nil {
-		return v.(*Logger)
+		return v.(*logger)
 	}
 	return NoopLogger
 }

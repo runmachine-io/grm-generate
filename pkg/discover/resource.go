@@ -19,5 +19,5 @@ import (
 
 // DiscoversResources provides a standard interface for resource discovery
 type DiscoversResources interface {
-	DiscoverResources(ctx context.Context) []model.ResourceDefinitions
+	DiscoverResources(ctx context.Context) []model.ResourceDefinition
 }
