@@ -17,10 +17,11 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
-	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
+	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -41,7 +42,7 @@ var (
 	optCachePath     string
 	optDryRun        bool
 	optDebug         bool
-	log              logr.Logger
+	log              gglog.Logger
 )
 
 var rootCmd = &cobra.Command{
@@ -81,16 +82,46 @@ func setupLogger(cmd *cobra.Command, args []string) error {
 	zc.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	zc.EncoderConfig.EncodeDuration = zapcore.StringDurationEncoder
 	if optDebug {
+		zc.EncoderConfig.EncodeCaller = customCallerEncoder
 		zc.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
 	} else {
+		zc.DisableCaller = true
 		zc.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
 	}
-	z, err := zc.Build()
+	z, err := zc.Build(zap.AddCallerSkip(1))
 	if err != nil {
 		return err
 	}
-	log = zapr.NewLogger(z)
+	log = gglog.New(zapr.NewLogger(z))
 	return nil
+}
+
+// customCallerEncoder encodes the caller filepath in a not-too-long,
+// not-too-short way.
+//
+// grm-generate has nested packages that can be like-named and appear in
+// ShortCallerEncoder as the same caller. For instance, assume a file
+// cmd/grm-generate/command/discover/aws.go and a file pkg/discover/aws.go,
+// both callers would appear as "discover/aws.go". This custom encoder simply
+// unwinds the package path back to either "cmd" or "pkg" bases in order to
+// have more fine-grained (but not the entire file path) caller identifiers.
+func customCallerEncoder(
+	caller zapcore.EntryCaller,
+	enc zapcore.PrimitiveArrayEncoder,
+) {
+	// NOTE(jaypipes): The zap library is (overly) concerned about allocations
+	// and performance. We are not because we're using this in a CLI tool, not
+	// a service logger.
+	full := caller.String()
+	parts := strings.Split(full, string(filepath.Separator))
+	for _, search := range []string{"pkg", "cmd"} {
+		idx := lo.LastIndexOf(parts, search)
+		if idx > -1 {
+			enc.AppendString(filepath.Join(parts[idx:]...))
+			return
+		}
+	}
+	enc.AppendString(full)
 }
 
 // Execute adds all child commands to the root command and sets flags
@@ -128,7 +159,7 @@ func newContext(
 	}()
 
 	// Cache the grm-generate specific logger
-	ctx = context.WithValue(ctx, gglog.ContextKey, gglog.New(log))
+	ctx = context.WithValue(ctx, gglog.ContextKey, log)
 
 	return ctx, cancelFunc
 }
