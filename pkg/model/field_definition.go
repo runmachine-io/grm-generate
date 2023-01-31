@@ -43,10 +43,10 @@ type FieldDefinition struct {
 	// the type of the map keys. If Type is not FieldTypeMap, KeyType will
 	// always return FieldTypeNil
 	KeyType schema.FieldType
-	// MemberFields is a map, keyed by member field name, of nested Fields
-	// when this Field has a Type of FieldTypeStruct. Returns nil when Type is
-	// not FieldTypeStruct.
-	MemberFields map[string]Field
+	// MemberFieldDefinitions is a map, keyed by member field name, of nested
+	// FieldDefinitions when this Field has a Type of FieldTypeStruct. Returns
+	// nil when Type is not FieldTypeStruct.
+	MemberFieldDefinitions map[string]FieldDefinition
 	// IsReadOnly is true if the field is not settable by the user
 	IsReadOnly bool
 	// IsImmutable is true if the field cannot be changed once set

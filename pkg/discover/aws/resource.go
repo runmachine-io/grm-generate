@@ -13,8 +13,10 @@ package aws
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/anydotcloud/grm/pkg/names"
+	"github.com/anydotcloud/grm/pkg/path/fieldpath"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	"github.com/anydotcloud/grm-generate/pkg/config"
@@ -42,8 +44,72 @@ func getResourceDefinitionsForService(
 		resNames := names.New(resName)
 		kind := model.NewKind("aws", service, resNames.Camel)
 		rc := cfg.GetResourceConfig(resName)
-		r := model.NewResourceDefinition(rc, kind)
+		fields, err := getFieldsForResource(ctx, rc, resName, ops)
+		if err != nil {
+			return nil, err
+		}
+		r := model.NewResourceDefinition(rc, kind, fields)
 		res = append(res, r)
+	}
+	return res, nil
+}
+
+// getFieldsForResource returns a map, keyed by field path, of Field objects
+// that describe the supplied resource's fields. Fields are collected by
+// looking at the supplied FieldConfig structs and examining the set of
+// Operations involving the resource.
+func getFieldsForResource(
+	ctx context.Context,
+	cfg *config.ResourceConfig,
+	resName string,
+	ops map[OpType]*awssdkmodel.Operation,
+) (map[string]*model.Field, error) {
+	res := map[string]*model.Field{}
+
+	// We first iterate over any FieldConfigs listed in our ResourceConfig. The
+	// FieldConfig structs will tell us whether a field has been renamed from
+	// the original AWS API shape.
+	for pathString, fc := range cfg.GetFieldConfigs() {
+		path := fieldpath.FromString(pathString)
+		fieldName := path.Back()
+		fieldNames := names.New(fieldName)
+		f := model.NewField(fieldNames, path, fc, nil)
+		res[pathString] = f
+	}
+
+	// We start with the Create operation's input and output shape. Members of
+	// the input shape are user-settable. Members of the output shape that are
+	// not in the input shape are read-only.
+	if createOp, found := ops[OpTypeCreate]; found {
+		inputShape := createOp.InputRef.Shape
+		if inputShape == nil {
+			msg := fmt.Sprintf(
+				"expected non-nil Input shape for createOp %s.",
+				createOp.Name,
+			)
+			panic(msg)
+		}
+
+		for memberName, memberShapeRef := range inputShape.MemberRefs {
+			if memberShapeRef.Shape == nil {
+				msg := fmt.Sprintf(
+					"expected non-nil Shape for member %s in inputShape %s.",
+					inputShape.ShapeName, memberName,
+				)
+				panic(msg)
+			}
+			path := fieldpath.FromString(memberName)
+			// NOTE(jaypipes): ResourceConfig.GetFieldConfig accounts for
+			// renamed fields...
+			fc := cfg.GetFieldConfig(path)
+			if fc != nil {
+				// The field is already discovered...
+				continue
+			}
+			fieldNames := names.New(memberName)
+			f := model.NewField(fieldNames, path, fc, nil)
+			res[fieldNames.Camel] = f
+		}
 	}
 	return res, nil
 }

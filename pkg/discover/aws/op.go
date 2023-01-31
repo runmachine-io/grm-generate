@@ -20,7 +20,6 @@ import (
 	"github.com/gertd/go-pluralize"
 
 	"github.com/anydotcloud/grm-generate/pkg/config"
-	"github.com/anydotcloud/grm-generate/pkg/log"
 )
 
 type OpType int
@@ -65,7 +64,6 @@ func getResourceOperationMap(
 	api *awssdkmodel.API,
 	cfg *config.Config,
 ) resourceOperationMap {
-	l := log.FromContext(ctx)
 	// create an index of Operations by resource name and operation type
 	res := resourceOperationMap{}
 	for opID, op := range api.Operations {
@@ -118,7 +116,6 @@ func getResourceOperationMap(
 			(*resOps)[opType] = op
 		}
 	}
-	l.Debug("res op map", "map", res)
 	return res
 }
 
