@@ -62,7 +62,7 @@ func discoverAWS(
 	resources, err := disco.DiscoverResources(ctx)
 	for _, r := range resources {
 		log.Debug("found resource", "resource", r.Kind.Name)
-		for _, path := range r.FieldPaths() {
+		for _, path := range r.GetFieldPaths() {
 			t := r.Fields[path].Definition.Type
 			log.Debug("found field", "resource", r.Kind.Name, "path", path, "type", t.String())
 		}

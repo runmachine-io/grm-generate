@@ -42,7 +42,7 @@ type FieldDefinition struct {
 	// MemberFieldDefinitions is a map, keyed by member field name, of nested
 	// FieldDefinitions when this Field has a Type of FieldTypeStruct. Returns
 	// nil when Type is not FieldTypeStruct.
-	MemberFieldDefinitions map[string]FieldDefinition
+	MemberFieldDefinitions map[string]*FieldDefinition
 	// IsRequired is true if the field is required to be set by the user
 	IsRequired bool
 	// IsReadOnly is true if the field is not settable by the user
