@@ -12,14 +12,14 @@
 package model
 
 import (
-	genconfig "github.com/anydotcloud/grm-generate/pkg/config"
+	"github.com/anydotcloud/grm-generate/pkg/config"
 )
 
 // ResourceDefinition describes a single top-level resource in a cloud service
 // API
 type ResourceDefinition struct {
 	// Config contains the resource-specific configuration options
-	Config *genconfig.ResourceConfig
+	Config *config.ResourceConfig
 	// Kind is the type of Resource
 	Kind Kind
 	// Fields is a map, keyed by the **field path**, of Field objects
@@ -30,7 +30,7 @@ type ResourceDefinition struct {
 // NewResourceDefinition returns a pointer to a new ResourceDefinition that
 // describes a single top-level resource in a cloud service API
 func NewResourceDefinition(
-	cfg *genconfig.ResourceConfig,
+	cfg *config.ResourceConfig,
 	kind Kind,
 ) *ResourceDefinition {
 	return &ResourceDefinition{

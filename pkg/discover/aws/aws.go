@@ -39,7 +39,7 @@ type discoverer struct {
 
 func (d *discoverer) DiscoverResources(
 	ctx context.Context,
-) ([]model.ResourceDefinition, error) {
+) ([]*model.ResourceDefinition, error) {
 	var err error
 	l := log.FromContext(ctx)
 	if d.repo == nil {
@@ -55,7 +55,16 @@ func (d *discoverer) DiscoverResources(
 	if err = d.loadAPIs(ctx); err != nil {
 		return nil, err
 	}
-	res := []model.ResourceDefinition{}
+	res := []*model.ResourceDefinition{}
+	for service, api := range d.apis {
+		serviceResources, err := getResourceDefinitionsForService(
+			ctx, service, api, d.opts.cfg,
+		)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, serviceResources...)
+	}
 	return res, nil
 }
 
@@ -91,9 +100,7 @@ func (d *discoverer) loadAPIs(
 		// Calling API.ServicePackageDoc() ends up resetting the API.imports
 		// unexported map variable...
 		_ = api.ServicePackageDoc()
-		//sdkapi := model.NewSDKAPI(api, h.APIGroupSuffix)
-
-		//return sdkapi, nil
+		d.apis[service] = api
 	}
 	return nil
 }
@@ -163,5 +170,6 @@ func New(
 ) discover.DiscoversResources {
 	return &discoverer{
 		opts: mergeOptions(opts),
+		apis: map[string]*awssdkmodel.API{},
 	}
 }

@@ -13,4 +13,33 @@ package config
 
 // ResourceConfig represents instructions to grm-generate on how to deal with a
 // particular resource.
-type ResourceConfig struct{}
+type ResourceConfig struct {
+	// AWS returns the AWS-specific resource configuration
+	AWS *AWSResourceConfig `json:"aws,omitempty"`
+}
+
+// ForAWS returns the AWS-specific resource configuration
+func (c *ResourceConfig) ForAWS() *AWSResourceConfig {
+	if c != nil && c.AWS != nil {
+		return c.AWS
+	}
+	return nil
+}
+
+// AWSResourceConfig contains AWS-specific configuration options for this
+// resource
+type AWSResourceConfig struct {
+	// Operations contains a map containing overrides for this resource's
+	// operations
+	Operations []*AWSResourceOperationConfig `json:"operations"`
+}
+
+// AWSResourceOperationConfig instructs the generator which AWS SDK Operation
+// to use for which type of operation for this resource.
+type AWSResourceOperationConfig struct {
+	// Type contains the stringified OpType, e.g. "create" or "READ_ONE"
+	Type string `json:"type"`
+	// ID contains the ID/name of the AWS SDK Operation that will serve as the
+	// OpType for this resource.
+	ID string `json:"id"`
+}
