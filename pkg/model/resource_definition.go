@@ -12,6 +12,10 @@
 package model
 
 import (
+	"sort"
+
+	"github.com/samber/lo"
+
 	"github.com/anydotcloud/grm-generate/pkg/config"
 )
 
@@ -27,15 +31,23 @@ type ResourceDefinition struct {
 	Fields map[string]*Field
 }
 
+// FieldPaths returns a sorted list of field paths for this resource.
+func (d *ResourceDefinition) FieldPaths() []string {
+	paths := lo.Keys(d.Fields)
+	sort.Strings(paths)
+	return paths
+}
+
 // NewResourceDefinition returns a pointer to a new ResourceDefinition that
 // describes a single top-level resource in a cloud service API
 func NewResourceDefinition(
 	cfg *config.ResourceConfig,
 	kind Kind,
+	fields map[string]*Field, // map of fields, keyed by **field path**
 ) *ResourceDefinition {
 	return &ResourceDefinition{
 		Config: cfg,
 		Kind:   kind,
-		Fields: map[string]*Field{},
+		Fields: fields,
 	}
 }

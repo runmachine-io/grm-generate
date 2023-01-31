@@ -19,10 +19,6 @@ import (
 // multiple Fields can have the same FieldDefinition but will never have the
 // same FieldDefinition *and* Path.
 type FieldDefinition struct {
-	// Name is the *renamed, cleaned, camel-cased name* of the field
-	// definition. This is akin to the aws-sdk-go private/model/api.Shape.Name
-	// attribute
-	Name string
 	// Type is the underlying type of the field.
 	Type schema.FieldType
 	// ElementType is the type of the list's elements.
@@ -43,10 +39,12 @@ type FieldDefinition struct {
 	// the type of the map keys. If Type is not FieldTypeMap, KeyType will
 	// always return FieldTypeNil
 	KeyType schema.FieldType
-	// MemberFields is a map, keyed by member field name, of nested Fields
-	// when this Field has a Type of FieldTypeStruct. Returns nil when Type is
-	// not FieldTypeStruct.
-	MemberFields map[string]Field
+	// MemberFieldDefinitions is a map, keyed by member field name, of nested
+	// FieldDefinitions when this Field has a Type of FieldTypeStruct. Returns
+	// nil when Type is not FieldTypeStruct.
+	MemberFieldDefinitions map[string]FieldDefinition
+	// IsRequired is true if the field is required to be set by the user
+	IsRequired bool
 	// IsReadOnly is true if the field is not settable by the user
 	IsReadOnly bool
 	// IsImmutable is true if the field cannot be changed once set

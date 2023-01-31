@@ -11,11 +11,71 @@
 
 package config
 
+import (
+	"strings"
+
+	"github.com/anydotcloud/grm/pkg/path/fieldpath"
+)
+
 // ResourceConfig represents instructions to grm-generate on how to deal with a
 // particular resource.
 type ResourceConfig struct {
 	// AWS returns the AWS-specific resource configuration
 	AWS *AWSResourceConfig `json:"aws,omitempty"`
+	// Fields contains a map, keyed by field path, of field configurations
+	Fields map[string]*FieldConfig `json:"fields"`
+}
+
+// GetFieldConfigs returns a map, keyed by field path, of field configurations
+func (c *ResourceConfig) GetFieldConfigs() map[string]*FieldConfig {
+	if c == nil {
+		return map[string]*FieldConfig{}
+	}
+	return c.Fields
+}
+
+// GetFieldConfig returns the FieldConfig for a specified field path. This
+// method uses case-insensitive matching AND takes into account any renames
+// that a field might have.
+//
+// For example, assume the following configuration snippet:
+//
+// ```yaml
+// resources:
+//
+//	Bucket:
+//	  fields:
+//	    Name:
+//	      renames:
+//	        - Bucket
+//
+// ```
+//
+// Calling Bucket ResourceConfig's GetFieldConfig("Bucket") would return
+// the FieldConfig struct for the "Name" field, since it has renames for
+// "Bucket"
+func (c *ResourceConfig) GetFieldConfig(path *fieldpath.Path) *FieldConfig {
+	if c == nil || len(c.Fields) == 0 {
+		return nil
+	}
+	// First try a simple match on the whole stringified path...
+	pathString := path.String()
+	for searchPath, fc := range c.Fields {
+		if strings.EqualFold(pathString, searchPath) {
+			return fc
+		}
+	}
+	// Now check to see if there are any renames for each part of the supplied
+	// path
+	front := path.Front()
+	for _, fc := range c.Fields {
+		for _, rename := range fc.Renames {
+			if strings.EqualFold(front, rename) {
+				return fc
+			}
+		}
+	}
+	return nil
 }
 
 // ForAWS returns the AWS-specific resource configuration
@@ -29,8 +89,7 @@ func (c *ResourceConfig) ForAWS() *AWSResourceConfig {
 // AWSResourceConfig contains AWS-specific configuration options for this
 // resource
 type AWSResourceConfig struct {
-	// Operations contains a map containing overrides for this resource's
-	// operations
+	// Operations contains a list of overrides for this resource's operations
 	Operations []*AWSResourceOperationConfig `json:"operations"`
 }
 

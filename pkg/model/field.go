@@ -12,7 +12,7 @@
 package model
 
 import (
-	genconfig "github.com/anydotcloud/grm-generate/pkg/config"
+	"github.com/anydotcloud/grm-generate/pkg/config"
 	"github.com/anydotcloud/grm/pkg/names"
 	"github.com/anydotcloud/grm/pkg/path/fieldpath"
 )
@@ -23,9 +23,24 @@ type Field struct {
 	Names names.Names
 	// Path is a "field path" that indicates where the field's value can be
 	// found within the Resource.
-	Path fieldpath.Path
-	// FieldConfig contains the configuration options for this field
-	FieldConfig *genconfig.FieldConfig
-	// FieldDefinition contains metadata about the field's type
-	FieldDefinition *FieldDefinition
+	Path *fieldpath.Path
+	// Config contains the configuration options for this field
+	Config *config.FieldConfig
+	// Definition contains metadata about the field's type
+	Definition *FieldDefinition
+}
+
+// NewField returns an initialized Field
+func NewField(
+	names names.Names,
+	path *fieldpath.Path,
+	cfg *config.FieldConfig,
+	def *FieldDefinition,
+) *Field {
+	return &Field{
+		Names:      names,
+		Path:       path,
+		Config:     cfg,
+		Definition: def,
+	}
 }
