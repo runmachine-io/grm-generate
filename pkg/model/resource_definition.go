@@ -13,10 +13,12 @@ package model
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/samber/lo"
 
 	"github.com/anydotcloud/grm-generate/pkg/config"
+	"github.com/anydotcloud/grm/pkg/path/fieldpath"
 )
 
 // ResourceDefinition describes a single top-level resource in a cloud service
@@ -32,10 +34,21 @@ type ResourceDefinition struct {
 }
 
 // FieldPaths returns a sorted list of field paths for this resource.
-func (d *ResourceDefinition) FieldPaths() []string {
+func (d *ResourceDefinition) GetFieldPaths() []string {
 	paths := lo.Keys(d.Fields)
 	sort.Strings(paths)
 	return paths
+}
+
+// GetField returns a Field given a field path. The search is case-insensitive
+func (d *ResourceDefinition) GetField(path *fieldpath.Path) *Field {
+	paths := d.GetFieldPaths()
+	for _, p := range paths {
+		if strings.EqualFold(path.String(), p) {
+			return d.Fields[p]
+		}
+	}
+	return nil
 }
 
 // NewResourceDefinition returns a pointer to a new ResourceDefinition that
