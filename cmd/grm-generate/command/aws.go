@@ -59,6 +59,9 @@ func discoverAWS(
 		discover.WithCachePath(sdkCachePath),
 		discover.WithServices(svcAlias),
 	)
-	_, err = disco.DiscoverResources(ctx)
+	resources, err := disco.DiscoverResources(ctx)
+	for _, r := range resources {
+		log.Debug("found resource", "resource", r.Kind.PluralName)
+	}
 	return err
 }

@@ -11,6 +11,10 @@
 
 package model
 
+import (
+	"github.com/gertd/go-pluralize"
+)
+
 // Kind describes a provider-specific, service-specific type of Resource
 type Kind struct {
 	// CloudProvider contains the short name of the cloud provider exposing
@@ -38,8 +42,9 @@ func NewKind(
 	cloudProvider string,
 	service string,
 	name string,
-	pluralName string,
 ) Kind {
+	pluralize := pluralize.NewClient()
+	pluralName := pluralize.Plural(name)
 	return Kind{
 		CloudProvider: cloudProvider,
 		Service:       service,
