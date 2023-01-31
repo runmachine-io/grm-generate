@@ -17,9 +17,11 @@ import (
 
 	"github.com/anydotcloud/grm/pkg/names"
 	"github.com/anydotcloud/grm/pkg/path/fieldpath"
+	"github.com/anydotcloud/grm/pkg/types/resource/schema"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
 	"github.com/anydotcloud/grm-generate/pkg/config"
+	"github.com/anydotcloud/grm-generate/pkg/log"
 	"github.com/anydotcloud/grm-generate/pkg/model"
 )
 
@@ -73,7 +75,8 @@ func getFieldsForResource(
 		path := fieldpath.FromString(pathString)
 		fieldName := path.Back()
 		fieldNames := names.New(fieldName)
-		f := model.NewField(fieldNames, path, fc, nil)
+		fd := getFieldDefinition(ctx, path, fc, nil)
+		f := model.NewField(fieldNames, path, fc, fd)
 		res[pathString] = f
 	}
 
@@ -107,9 +110,90 @@ func getFieldsForResource(
 				continue
 			}
 			fieldNames := names.New(memberName)
-			f := model.NewField(fieldNames, path, fc, nil)
+			fd := getFieldDefinition(ctx, path, nil, memberShapeRef)
+			f := model.NewField(fieldNames, path, fc, fd)
 			res[fieldNames.Camel] = f
 		}
 	}
 	return res, nil
+}
+
+// getFieldDefinition collects information on the field's definition by
+// examining both the FieldConfig and the AWS SDK model ShapeRef.
+func getFieldDefinition(
+	ctx context.Context,
+	path *fieldpath.Path,
+	cfg *config.FieldConfig,
+	shapeRef *awssdkmodel.ShapeRef,
+) *model.FieldDefinition {
+	l := log.FromContext(ctx)
+	def := &model.FieldDefinition{
+		Type:        schema.FieldTypeUnknown,
+		ValueType:   schema.FieldTypeNil,
+		KeyType:     schema.FieldTypeNil,
+		ElementType: schema.FieldTypeNil,
+	}
+	// First try to determine any type information from the field config
+	if cfg != nil {
+		if cfg.IsReadOnly != nil {
+			def.IsReadOnly = *cfg.IsReadOnly
+		}
+		if cfg.IsRequired != nil {
+			def.IsRequired = *cfg.IsRequired
+		}
+		if cfg.IsImmutable != nil {
+			def.IsImmutable = *cfg.IsImmutable
+		}
+		if cfg.IsSecret != nil {
+			def.IsSecret = *cfg.IsSecret
+		}
+		if cfg.Type != nil {
+			def.Type = schema.StringToFieldType(*cfg.Type)
+		}
+		if cfg.ElementType != nil {
+			def.ElementType = schema.StringToFieldType(*cfg.ElementType)
+		}
+		if cfg.KeyType != nil {
+			def.KeyType = schema.StringToFieldType(*cfg.KeyType)
+		}
+		if cfg.ValueType != nil {
+			def.ValueType = schema.StringToFieldType(*cfg.ValueType)
+		}
+	}
+
+	if def.Type == schema.FieldTypeUnknown {
+		if shapeRef == nil {
+			msg := fmt.Sprintf(
+				"cannot determine field definition/type for %s. "+
+					"No field config or shapeRef supplied.",
+				path,
+			)
+			panic(msg)
+		}
+		// Let's examine the supplied ShapeRef for type information...
+		var shape *awssdkmodel.Shape
+		if shapeRef != nil {
+			shape = shapeRef.Shape
+		}
+		// this is a pointer to the "parent" containing Shape when the field being
+		// processed here is a structure or a list/map of structures.
+		// var containerShape *awssdkmodel.Shape = shape
+		switch shape.Type {
+		case "structure":
+			l.Debug("skipping struct field", "path", path.String())
+		case "list":
+			l.Debug("skipping list field", "path", path.String())
+		case "map":
+			l.Debug("skipping map field", "path", path.String())
+		case "timestamp":
+			def.Type = schema.FieldTypeTime
+		case "string", "character":
+			def.Type = schema.FieldTypeString
+		case "boolean":
+			def.Type = schema.FieldTypeBool
+		case "byte", "short", "integer", "long":
+			def.Type = schema.FieldTypeInt
+		}
+	}
+	return def
 }
