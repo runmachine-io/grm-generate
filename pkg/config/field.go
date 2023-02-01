@@ -34,7 +34,7 @@ type FieldConfig struct {
 	//
 	// Any time the generator sees the name "Bucket", it will automatically
 	// know that the "Name" field is what should be referred to.
-	Renames []string `json:"rename,omitempty"`
+	Renames []string `json:"renames,omitempty"`
 	// Type *overrides* the type of the field. This is required for custom
 	// fields that are not inferred either as a Create Input/Output shape or
 	// via the SourceFieldConfig attribute.

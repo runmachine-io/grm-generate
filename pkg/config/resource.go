@@ -20,10 +20,10 @@ import (
 // ResourceConfig represents instructions to grm-generate on how to deal with a
 // particular resource.
 type ResourceConfig struct {
-	// AWS returns the AWS-specific resource configuration
-	AWS *AWSResourceConfig `json:"aws,omitempty"`
 	// Fields contains a map, keyed by field path, of field configurations
 	Fields map[string]*FieldConfig `json:"fields"`
+	// AWS returns the AWS-specific resource configuration
+	AWS *AWSResourceConfig `json:"aws,omitempty"`
 }
 
 // GetFieldConfigs returns a map, keyed by field path, of field configurations
