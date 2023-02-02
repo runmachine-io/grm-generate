@@ -28,7 +28,7 @@ type ResourceConfig struct {
 
 // GetFieldConfigs returns a map, keyed by field path, of field configurations
 func (c *ResourceConfig) GetFieldConfigs() map[string]*FieldConfig {
-	if c == nil {
+	if c == nil || len(c.Fields) == 0 {
 		return map[string]*FieldConfig{}
 	}
 	return c.Fields
