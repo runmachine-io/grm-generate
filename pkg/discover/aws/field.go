@@ -34,9 +34,9 @@ func getFieldDefinition(
 ) *model.FieldDefinition {
 	def := &model.FieldDefinition{
 		Type:        schema.FieldTypeUnknown,
-		ValueType:   schema.FieldTypeNil,
-		KeyType:     schema.FieldTypeNil,
-		ElementType: schema.FieldTypeNil,
+		ValueType:   schema.FieldTypeUnknown,
+		KeyType:     schema.FieldTypeUnknown,
+		ElementType: schema.FieldTypeUnknown,
 	}
 	// First try to determine any type information from the field config
 	fc := cfg.GetFieldConfig(path)
@@ -71,7 +71,8 @@ func getFieldDefinition(
 		if shapeRef == nil {
 			msg := fmt.Sprintf(
 				"cannot determine field definition/type for %s. "+
-					"No field config or shapeRef supplied.",
+					"No field config or shapeRef supplied or "+
+					"supplied field config had no type information.",
 				path,
 			)
 			panic(msg)
