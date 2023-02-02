@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	emptyConfig  = config.New()
-	bucketConfig = config.New(
+	emptyConfig = config.New()
+	s3Config    = config.New(
 		config.WithYAML(`
 resources:
   Bucket:
@@ -52,8 +52,8 @@ func TestGetResourceConfigs(t *testing.T) {
 			map[string]*config.ResourceConfig{},
 		},
 		{
-			"Bucket config returns map with single key",
-			bucketConfig,
+			"s3Config returns map with single key",
+			s3Config,
 			map[string]*config.ResourceConfig{
 				"Bucket": &config.ResourceConfig{
 					Fields: map[string]*config.FieldConfig{
@@ -69,5 +69,59 @@ func TestGetResourceConfigs(t *testing.T) {
 	}
 	for _, test := range tests {
 		assert.Equal(test.exp, test.cfg.GetResourceConfigs())
+	}
+}
+
+func TestGetResourceConfig(t *testing.T) {
+	assert := assert.New(t)
+	tests := []struct {
+		name    string
+		resName string
+		cfg     *config.Config
+		exp     *config.ResourceConfig
+	}{
+		{
+			"Nil config returns nil",
+			"Bucket",
+			nil,
+			nil,
+		},
+		{
+			"Empty config returns nil",
+			"Bucket",
+			emptyConfig,
+			nil,
+		},
+		{
+			"Bucket config returns ResourceConfig",
+			"Bucket",
+			s3Config,
+			&config.ResourceConfig{
+				Fields: map[string]*config.FieldConfig{
+					"Name": &config.FieldConfig{
+						Renames: []string{
+							"Bucket",
+						},
+					},
+				},
+			},
+		},
+		{
+			"lowercase Bucket returns ResourceConfig",
+			"bucket",
+			s3Config,
+			&config.ResourceConfig{
+				Fields: map[string]*config.FieldConfig{
+					"Name": &config.FieldConfig{
+						Renames: []string{
+							"Bucket",
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		assert.Equal(test.exp, test.cfg.GetResourceConfig(test.resName))
 	}
 }
