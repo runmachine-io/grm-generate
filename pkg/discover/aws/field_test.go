@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	bucketNameNoTypeConfig = config.New(
+	flatNoTypeConfig = config.New(
 		config.WithYAML(`
 resources:
   Bucket:
@@ -36,7 +36,7 @@ resources:
 `,
 		),
 	)
-	bucketNameWithTypeConfig = config.New(
+	flatWithTypeConfig = config.New(
 		config.WithYAML(`
 resources:
   Bucket:
@@ -44,6 +44,16 @@ resources:
       Name:
 		renames:
          - Bucket
+		type: string
+`,
+		),
+	)
+	nestedPathConfig = config.New(
+		config.WithYAML(`
+resources:
+  Repository:
+    fields:
+      Tags.Value:
 		type: string
 `,
 		),
@@ -71,9 +81,9 @@ func Test_getFieldDefinition(t *testing.T) {
 			true,
 		},
 		{
-			"config with no type info and nil shape panics",
+			"field with no type info and nil shape panics",
 			"Name",
-			bucketNameNoTypeConfig.GetResourceConfig("Bucket"),
+			flatNoTypeConfig.GetResourceConfig("Bucket"),
 			nil,
 			&model.FieldDefinition{
 				Type: schema.FieldTypeString,
@@ -81,9 +91,29 @@ func Test_getFieldDefinition(t *testing.T) {
 			true,
 		},
 		{
-			"config with string type info and nil shape infers from config",
+			"field with string type info and nil shape infers from config",
 			"Name",
-			bucketNameWithTypeConfig.GetResourceConfig("Bucket"),
+			flatWithTypeConfig.GetResourceConfig("Bucket"),
+			nil,
+			&model.FieldDefinition{
+				Type: schema.FieldTypeString,
+			},
+			false,
+		},
+		{
+			"nested field path with string type info and nil shape infers from config",
+			"Tags.Value",
+			nestedPathConfig.GetResourceConfig("Repository"),
+			nil,
+			&model.FieldDefinition{
+				Type: schema.FieldTypeString,
+			},
+			false,
+		},
+		{
+			"case-insensitive nested field path matching",
+			"tags.value",
+			nestedPathConfig.GetResourceConfig("Repository"),
 			nil,
 			&model.FieldDefinition{
 				Type: schema.FieldTypeString,
