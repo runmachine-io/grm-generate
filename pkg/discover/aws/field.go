@@ -29,6 +29,10 @@ import (
 func getFieldDefinition(
 	ctx context.Context,
 	path *fieldpath.Path,
+	// NOTE(jaypipes): We pass a ResourceConfig here and not a FieldConfig
+	// because in order to handle renaming in the recursion necessary for
+	// getMemberFieldDefinitions, we need to look up field config by
+	// accumulated field path.
 	cfg *config.ResourceConfig,
 	shapeRef *awssdkmodel.ShapeRef,
 ) *model.FieldDefinition {
