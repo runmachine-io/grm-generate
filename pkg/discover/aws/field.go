@@ -24,9 +24,9 @@ import (
 	"github.com/anydotcloud/grm-generate/pkg/model"
 )
 
-// getFieldDefinition collects information on the field's definition by
+// GetFieldDefinition collects information on the field's definition by
 // examining both the FieldConfig and the AWS SDK model ShapeRef.
-func getFieldDefinition(
+func GetFieldDefinition(
 	ctx context.Context,
 	path *fieldpath.Path,
 	// NOTE(jaypipes): We pass a ResourceConfig here and not a FieldConfig
@@ -187,7 +187,7 @@ func getMemberFieldDefinitions(
 		memberPath := containerPath.Copy()
 		memberPath.PushBack(cleanMemberNames.Camel)
 		memberShape := containerShape.MemberRefs[memberName]
-		memberDef := getFieldDefinition(ctx, memberPath, cfg, memberShape)
+		memberDef := GetFieldDefinition(ctx, memberPath, cfg, memberShape)
 		defs[cleanMemberNames.Camel] = memberDef
 	}
 	return defs

@@ -23,10 +23,10 @@ import (
 	"github.com/anydotcloud/grm-generate/pkg/model"
 )
 
-// getResourceDefinitionsForService returns a slice of `ResourceDefinition`
+// GetResourceDefinitionsForService returns a slice of `ResourceDefinition`
 // structs that describe the top-level resources discovered for a supplied AWS
 // service API
-func getResourceDefinitionsForService(
+func GetResourceDefinitionsForService(
 	ctx context.Context,
 	service string, // the service package name
 	api *awssdkmodel.API,
@@ -44,7 +44,7 @@ func getResourceDefinitionsForService(
 		resNames := names.New(resName)
 		kind := model.NewKind("aws", service, resNames.Camel)
 		rc := cfg.GetResourceConfig(resName)
-		fields, err := getFieldsForResource(ctx, rc, resName, ops)
+		fields, err := GetFieldsForResource(ctx, rc, resName, ops)
 		if err != nil {
 			return nil, err
 		}
@@ -62,11 +62,11 @@ func getResourceDefinitionsForService(
 	return res, nil
 }
 
-// getFieldsForResource returns a map, keyed by field path, of Field objects
+// GetFieldsForResource returns a map, keyed by field path, of Field objects
 // that describe the supplied resource's fields. Fields are collected by
 // looking at the supplied FieldConfig structs and examining the set of
 // Operations involving the resource.
-func getFieldsForResource(
+func GetFieldsForResource(
 	ctx context.Context,
 	cfg *config.ResourceConfig,
 	resName string,
@@ -81,7 +81,7 @@ func getFieldsForResource(
 		path := fieldpath.FromString(pathString)
 		fieldName := path.Back()
 		fieldNames := names.New(fieldName)
-		fd := getFieldDefinition(ctx, path, cfg, nil)
+		fd := GetFieldDefinition(ctx, path, cfg, nil)
 		f := model.NewField(fieldNames, path, fc, fd)
 		res[pathString] = f
 	}
@@ -116,7 +116,7 @@ func getFieldsForResource(
 				continue
 			}
 			fieldNames := names.New(memberName)
-			fd := getFieldDefinition(ctx, path, nil, memberShapeRef)
+			fd := GetFieldDefinition(ctx, path, nil, memberShapeRef)
 			f := model.NewField(fieldNames, path, fc, fd)
 			res[fieldNames.Camel] = f
 		}

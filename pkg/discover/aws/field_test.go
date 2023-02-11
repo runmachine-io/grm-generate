@@ -9,7 +9,7 @@
 // express or implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-package aws
+package aws_test
 
 import (
 	"context"
@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/anydotcloud/grm-generate/pkg/config"
+	"github.com/anydotcloud/grm-generate/pkg/discover/aws"
 	"github.com/anydotcloud/grm-generate/pkg/model"
 )
 
@@ -60,7 +61,7 @@ resources:
 	)
 )
 
-func Test_getFieldDefinition(t *testing.T) {
+func Test_GetFieldDefinition(t *testing.T) {
 	assert := assert.New(t)
 	tests := []struct {
 		name     string
@@ -127,11 +128,11 @@ func Test_getFieldDefinition(t *testing.T) {
 		if test.expPanic {
 			assert.Panics(
 				func() {
-					getFieldDefinition(ctx, path, test.cfg, test.shapeRef)
+					aws.GetFieldDefinition(ctx, path, test.cfg, test.shapeRef)
 				},
 			)
 		} else {
-			got := getFieldDefinition(ctx, path, test.cfg, test.shapeRef)
+			got := aws.GetFieldDefinition(ctx, path, test.cfg, test.shapeRef)
 			assert.Equal(test.exp, got)
 		}
 	}

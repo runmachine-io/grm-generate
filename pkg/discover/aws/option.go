@@ -22,26 +22,38 @@ const (
 )
 
 type option struct {
-	cfg       *config.Config
-	cachePath string
-	services  []string
+	cfg           *config.Config
+	cachePath     string
+	services      []string
+	apiModelPaths []string
 }
 
+// WithConfig uses the supplied Config as instructions to the discovery code
 func WithConfig(cfg *config.Config) option {
 	return option{
 		cfg: cfg,
 	}
 }
 
+// WithCachePath uses the supplied cache path for discovery of API models
 func WithCachePath(path string) option {
 	return option{
 		cachePath: path,
 	}
 }
 
+// WithServices instructs the discovery code which AWS services to discover
 func WithServices(services ...string) option {
 	return option{
 		services: services,
+	}
+}
+
+// WithAPIModelPaths instructs the discovery code where to find API models.
+// Expects absolute filepaths. Overrides the `WithCachePath` option.
+func WithAPIModelPaths(apiModelPaths ...string) option {
+	return option{
+		apiModelPaths: apiModelPaths,
 	}
 }
 
@@ -58,6 +70,11 @@ func mergeOptions(opts []option) option {
 		}
 		if len(opt.services) > 0 {
 			res.services = lo.Uniq(lo.Union(res.services, opt.services))
+		}
+		if len(opt.apiModelPaths) > 0 {
+			res.apiModelPaths = lo.Uniq(
+				lo.Union(res.apiModelPaths, opt.apiModelPaths),
+			)
 		}
 	}
 	// now process the defaults...
