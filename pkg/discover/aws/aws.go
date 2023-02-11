@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
 
@@ -52,12 +53,18 @@ func (d *discoverer) DiscoverResources(
 			)
 		}
 	}
-	if err = d.loadAPIs(ctx); err != nil {
+	var modelPaths []string
+	modelPaths, err = d.getModelPaths(ctx)
+	if err != nil {
+		return nil, err
+	}
+	d.apis, err = GetAPIs(ctx, d.opts.cachePath, modelPaths)
+	if err != nil {
 		return nil, err
 	}
 	res := []*model.ResourceDefinition{}
 	for service, api := range d.apis {
-		serviceResources, err := getResourceDefinitionsForService(
+		serviceResources, err := GetResourceDefinitionsForService(
 			ctx, service, api, d.opts.cfg,
 		)
 		if err != nil {
@@ -68,31 +75,29 @@ func (d *discoverer) DiscoverResources(
 	return res, nil
 }
 
-// loadModels loads API structs for each service package for which we we are
-// discovering resources.
-func (d *discoverer) loadAPIs(
+// getAPIs returns a map, keyed by service package name, of API structs for
+// each service package for which we we are discovering resources.
+func GetAPIs(
 	ctx context.Context,
-) error {
-	if len(d.opts.services) == 0 {
-		return nil
+	basePath string, // the base dir where models are found
+	modelPaths []string,
+) (map[string]*awssdkmodel.API, error) {
+	res := map[string]*awssdkmodel.API{}
+	if len(modelPaths) == 0 {
+		return res, nil
 	}
 	l := log.FromContext(ctx)
 	loader := &awssdkmodel.Loader{
-		BaseImport:            d.opts.cachePath,
+		BaseImport:            basePath,
 		IgnoreUnsupportedAPIs: true,
-	}
-	modelPaths, err := d.getModelPaths(ctx)
-	if err != nil {
-		return err
 	}
 	apis, err := loader.Load(modelPaths)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	// apis is a map, keyed by the service alias, of pointers to aws-sdk-go
-	// model API objects
-	for service, api := range apis {
-		l.Debug("loading API model", "service", service)
+	// apis is a map, keyed by the base path + service alias, of pointers to
+	// aws-sdk-go model API objects
+	for _, api := range apis {
 		// If we don't do this, we can end up with panic()'s like this:
 		// panic: assignment to entry in nil map
 		// when trying to execute Shape.GoType().
@@ -100,9 +105,34 @@ func (d *discoverer) loadAPIs(
 		// Calling API.ServicePackageDoc() ends up resetting the API.imports
 		// unexported map variable...
 		_ = api.ServicePackageDoc()
-		d.apis[service] = api
+		pkgName := api.PackageName()
+		l.Debug("loading API model", "package_name", pkgName)
+		res[pkgName] = api
 	}
-	return nil
+	return res, nil
+}
+
+// getModelPathsFromOptions returns a slide of paths to API model definitions.
+// The paths are verified and are expected to be absolute paths. Returns a
+// sorted list of strings.
+func (d *discoverer) getModelPathsFromOptions(
+	ctx context.Context,
+) ([]string, error) {
+	l := log.FromContext(ctx)
+	res := make([]string, len(d.opts.apiModelPaths))
+	for x, apiModelPath := range d.opts.apiModelPaths {
+		fi, err := os.Lstat(apiModelPath)
+		if err != nil {
+			return nil, err
+		}
+		if !fi.Mode().IsRegular() {
+			return nil, fmt.Errorf("%s is not a regular file", apiModelPath)
+		}
+		res[x] = apiModelPath
+		l.Debug("found API model file", "path", apiModelPath)
+	}
+	sort.Strings(res)
+	return res, nil
 }
 
 // getModelPaths returns a slice of paths to API model definitions for each
@@ -111,6 +141,12 @@ func (d *discoverer) loadAPIs(
 func (d *discoverer) getModelPaths(
 	ctx context.Context,
 ) ([]string, error) {
+	l := log.FromContext(ctx)
+	// If there are supplied API model paths, just check those and return,
+	// otherwise discover the API model files from the services and cache path
+	if len(d.opts.apiModelPaths) > 0 {
+		return d.getModelPathsFromOptions(ctx)
+	}
 	modelAPIsPath := filepath.Join(d.opts.cachePath, "models", "apis")
 	fi, err := os.Lstat(modelAPIsPath)
 	if err != nil {
@@ -120,7 +156,6 @@ func (d *discoverer) getModelPaths(
 		return nil, fmt.Errorf("%s is not a directory", modelAPIsPath)
 	}
 
-	l := log.FromContext(ctx)
 	res := make([]string, len(d.opts.services))
 	for x, service := range d.opts.services {
 		serviceAPIPath := filepath.Join(modelAPIsPath, service)
@@ -161,6 +196,7 @@ func (d *discoverer) getModelPaths(
 		res[x] = apiModelPath
 		l.Debug("found API model file", "service", service, "path", apiModelPath)
 	}
+	sort.Strings(res)
 	return res, nil
 }
 
