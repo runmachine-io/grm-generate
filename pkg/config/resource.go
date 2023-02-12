@@ -36,7 +36,9 @@ func (c *ResourceConfig) GetFieldConfigs() map[string]*FieldConfig {
 
 // GetFieldConfig returns the FieldConfig for a specified field path. This
 // method uses case-insensitive matching AND takes into account any renames
-// that a field might have.
+// that a field might have. If the supplied path matched a renamed field,
+// returns the *renamed* field path as the second return value. If the field is
+// not renamed, nil is returned for the second return value.
 //
 // For example, assume the following configuration snippet:
 //
@@ -53,29 +55,31 @@ func (c *ResourceConfig) GetFieldConfigs() map[string]*FieldConfig {
 //
 // Calling Bucket ResourceConfig's GetFieldConfig("Bucket") would return
 // the FieldConfig struct for the "Name" field, since it has renames for
-// "Bucket"
-func (c *ResourceConfig) GetFieldConfig(path *fieldpath.Path) *FieldConfig {
+// "Bucket" along with a fieldpath.FromString("Name")
+func (c *ResourceConfig) GetFieldConfig(
+	path *fieldpath.Path,
+) (*FieldConfig, *fieldpath.Path) {
 	if c == nil || len(c.Fields) == 0 {
-		return nil
+		return nil, nil
 	}
 	// First try a simple match on the whole stringified path...
 	pathString := path.String()
 	for searchPath, fc := range c.Fields {
 		if strings.EqualFold(pathString, searchPath) {
-			return fc
+			return fc, nil
 		}
 	}
 	// Now check to see if there are any renames for each part of the supplied
 	// path
 	front := path.Front()
-	for _, fc := range c.Fields {
+	for pathStr, fc := range c.Fields {
 		for _, rename := range fc.Renames {
 			if strings.EqualFold(front, rename) {
-				return fc
+				return fc, fieldpath.FromString(pathStr)
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // ForAWS returns the AWS-specific resource configuration

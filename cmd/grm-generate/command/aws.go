@@ -63,7 +63,8 @@ func discoverAWS(
 	for _, r := range resources {
 		log.Debug("found resource", "resource", r.Kind.Name)
 		for _, path := range r.GetFieldPaths() {
-			t := r.Fields[path].Definition.Type
+			f := r.GetField(path)
+			t := f.Definition.Type
 			log.Debug("found field", "resource", r.Kind.Name, "path", path, "type", t.String())
 		}
 	}

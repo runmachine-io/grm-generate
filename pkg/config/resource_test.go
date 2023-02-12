@@ -66,18 +66,21 @@ func TestGetFieldConfig(t *testing.T) {
 		fieldPath string
 		cfg       *config.ResourceConfig
 		exp       *config.FieldConfig
+		expRepath string
 	}{
 		{
 			"Nil config returns nil",
 			"Name",
 			nil,
 			nil,
+			"",
 		},
 		{
 			"Empty config returns nil",
 			"Name",
 			emptyResourceConfig,
 			nil,
+			"",
 		},
 		{
 			"Name returns FieldConfig",
@@ -88,6 +91,7 @@ func TestGetFieldConfig(t *testing.T) {
 					"Bucket",
 				},
 			},
+			"",
 		},
 		{
 			"lowercase Name returns FieldConfig",
@@ -98,6 +102,7 @@ func TestGetFieldConfig(t *testing.T) {
 					"Bucket",
 				},
 			},
+			"",
 		},
 		{
 			"renamed from Bucket returns FieldConfig",
@@ -108,6 +113,7 @@ func TestGetFieldConfig(t *testing.T) {
 					"Bucket",
 				},
 			},
+			"Name",
 		},
 		{
 			"renamed from Bucket returns FieldConfig when lowercase rename",
@@ -118,10 +124,16 @@ func TestGetFieldConfig(t *testing.T) {
 					"Bucket",
 				},
 			},
+			"Name",
 		},
 	}
 	for _, test := range tests {
 		path := fieldpath.FromString(test.fieldPath)
-		assert.Equal(test.exp, test.cfg.GetFieldConfig(path))
+		fc, repath := test.cfg.GetFieldConfig(path)
+		assert.Equal(test.exp, fc)
+		if test.expRepath != "" {
+			assert.NotNil(repath)
+			assert.Equal(test.expRepath, repath.String())
+		}
 	}
 }

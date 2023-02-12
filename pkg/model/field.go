@@ -19,8 +19,6 @@ import (
 
 // Field represents a single field in the Resource's Schema.
 type Field struct {
-	// Names is a set of normalized name variations for the field
-	Names names.Names
 	// Path is a "field path" that indicates where the field's value can be
 	// found within the Resource.
 	Path *fieldpath.Path
@@ -30,16 +28,31 @@ type Field struct {
 	Definition *FieldDefinition
 }
 
-// NewField returns an initialized Field
+// Names returns the set of normalized name variations for the field
+func (f *Field) Names() names.Names {
+	return names.New(f.Path.Back())
+}
+
+// NewField returns an initialized Field from a field path, configuration and
+// FieldDefinition. We normalize each part of the supplied field path, so for
+// example, "RegistryId" becomes "RegistryID" and "EncryptionConfig.KmsKeyId"
+// becomes "EncryptionConfig.KMSKeyID".
 func NewField(
-	names names.Names,
 	path *fieldpath.Path,
 	cfg *config.FieldConfig,
 	def *FieldDefinition,
 ) *Field {
+	normPath := &fieldpath.Path{}
+	for {
+		part := path.PopFront()
+		if part == "" {
+			break
+		}
+		normed := names.New(part)
+		normPath.PushBack(normed.Camel)
+	}
 	return &Field{
-		Names:      names,
-		Path:       path,
+		Path:       normPath,
 		Config:     cfg,
 		Definition: def,
 	}

@@ -61,8 +61,9 @@ resources:
 	)
 )
 
-func Test_GetFieldDefinition(t *testing.T) {
+func Test_VisitMemberShape(t *testing.T) {
 	assert := assert.New(t)
+	kind := model.NewKind("aws", "s3", "Bucket")
 	tests := []struct {
 		name     string
 		path     string
@@ -124,15 +125,16 @@ func Test_GetFieldDefinition(t *testing.T) {
 	}
 	ctx := context.TODO()
 	for _, test := range tests {
+		rd := model.NewResourceDefinition(test.cfg, kind)
 		path := fieldpath.FromString(test.path)
 		if test.expPanic {
 			assert.Panics(
 				func() {
-					aws.GetFieldDefinition(ctx, path, test.cfg, test.shapeRef)
+					aws.VisitMemberShape(ctx, rd, path, test.cfg, test.shapeRef)
 				},
 			)
 		} else {
-			got := aws.GetFieldDefinition(ctx, path, test.cfg, test.shapeRef)
+			got := aws.VisitMemberShape(ctx, rd, path, test.cfg, test.shapeRef)
 			assert.Equal(test.exp, got)
 		}
 	}
