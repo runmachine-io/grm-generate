@@ -28,39 +28,48 @@ type ResourceDefinition struct {
 	Config *config.ResourceConfig
 	// Kind is the type of Resource
 	Kind Kind
-	// Fields is a map, keyed by the **field path**, of Field objects
+	// fields is a map, keyed by the **field path**, of Field objects
 	// representing a field in the Resource.
-	Fields map[string]*Field
+	fields map[string]*Field
 }
 
 // FieldPaths returns a sorted list of field paths for this resource.
-func (d *ResourceDefinition) GetFieldPaths() []string {
-	paths := lo.Keys(d.Fields)
-	sort.Strings(paths)
-	return paths
+func (d *ResourceDefinition) GetFieldPaths() []*fieldpath.Path {
+	pathStrs := lo.Keys(d.fields)
+	sort.Strings(pathStrs)
+	res := make([]*fieldpath.Path, len(pathStrs))
+	for x, pathStr := range pathStrs {
+		res[x] = fieldpath.FromString(pathStr)
+	}
+	return res
 }
 
 // GetField returns a Field given a field path. The search is case-insensitive
 func (d *ResourceDefinition) GetField(path *fieldpath.Path) *Field {
-	paths := d.GetFieldPaths()
-	for _, p := range paths {
-		if strings.EqualFold(path.String(), p) {
-			return d.Fields[p]
+	for pathStr, f := range d.fields {
+		if strings.EqualFold(path.String(), pathStr) {
+			return f
 		}
 	}
 	return nil
 }
 
+// AddField adds a new Field to the resource definition at the supplied field
+// path
+func (d *ResourceDefinition) AddField(f *Field) {
+	d.fields[f.Path.String()] = f
+}
+
 // NewResourceDefinition returns a pointer to a new ResourceDefinition that
-// describes a single top-level resource in a cloud service API
+// describes a single top-level resource in a cloud service API. Add fields to
+// the ResourceDefinition by calling the AddField method.
 func NewResourceDefinition(
 	cfg *config.ResourceConfig,
 	kind Kind,
-	fields map[string]*Field, // map of fields, keyed by **field path**
 ) *ResourceDefinition {
 	return &ResourceDefinition{
 		Config: cfg,
 		Kind:   kind,
-		Fields: fields,
+		fields: map[string]*Field{},
 	}
 }

@@ -24,10 +24,15 @@ import (
 	"github.com/anydotcloud/grm-generate/pkg/model"
 )
 
-// GetFieldDefinition collects information on the field's definition by
-// examining both the FieldConfig and the AWS SDK model ShapeRef.
-func GetFieldDefinition(
+// VisitMemberShape collects information on the possible field's definition by
+// examining both the FieldConfig and the AWS SDK model ShapeRef and adds a new
+// Field to the supplied ResourceDefinition as appropriate, returning the
+// discovered FieldDefinition representing the member shapeRef.
+//
+// This function is called recursively for nested fields.
+func VisitMemberShape(
 	ctx context.Context,
+	rd *model.ResourceDefinition,
 	path *fieldpath.Path,
 	// NOTE(jaypipes): We pass a ResourceConfig here and not a FieldConfig
 	// because in order to handle renaming in the recursion necessary for
@@ -42,8 +47,13 @@ func GetFieldDefinition(
 		KeyType:     schema.FieldTypeUnknown,
 		ElementType: schema.FieldTypeUnknown,
 	}
-	// First try to determine any type information from the field config
-	fc := cfg.GetFieldConfig(path)
+	// First try to determine any type information from the field config. Note
+	// that any renamed fields have the "path" variable changed to the renamed
+	// path here.
+	fc, repath := cfg.GetFieldConfig(path)
+	if repath != nil {
+		path = repath
+	}
 	if fc != nil {
 		if fc.IsReadOnly != nil {
 			def.IsReadOnly = *fc.IsReadOnly
@@ -139,12 +149,18 @@ func GetFieldDefinition(
 			}
 
 			if containerShape.Type == "structure" {
-				def.MemberFieldDefinitions = getMemberFieldDefinitions(ctx, cfg, containerShape, path)
+				def.MemberFieldDefinitions = getMemberFieldDefinitions(
+					ctx, rd, cfg, containerShape, path,
+				)
 			}
 		case "structure":
-			def.MemberFieldDefinitions = getMemberFieldDefinitions(ctx, cfg, shape, path)
+			def.MemberFieldDefinitions = getMemberFieldDefinitions(
+				ctx, rd, cfg, shape, path,
+			)
 		}
 	}
+	f := model.NewField(path, fc, def)
+	rd.AddField(f)
 	return def
 }
 
@@ -177,6 +193,7 @@ func fieldTypeFromShape(
 // a struct field's member field definitions
 func getMemberFieldDefinitions(
 	ctx context.Context,
+	rd *model.ResourceDefinition,
 	cfg *config.ResourceConfig,
 	containerShape *awssdkmodel.Shape, // the "parent" or "containing" shape
 	containerPath *fieldpath.Path, // the field path to containing field
@@ -187,7 +204,7 @@ func getMemberFieldDefinitions(
 		memberPath := containerPath.Copy()
 		memberPath.PushBack(cleanMemberNames.Camel)
 		memberShape := containerShape.MemberRefs[memberName]
-		memberDef := GetFieldDefinition(ctx, memberPath, cfg, memberShape)
+		memberDef := VisitMemberShape(ctx, rd, memberPath, cfg, memberShape)
 		defs[cleanMemberNames.Camel] = memberDef
 	}
 	return defs
