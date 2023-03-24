@@ -38,10 +38,18 @@ A tool to generate cloud resource manager packages`
 )
 
 var (
+	outputOptions = []string{
+		"yaml",
+		"table",
+	}
+)
+
+var (
 	defaultCachePath string
 	optCachePath     string
 	optDryRun        bool
 	optDebug         bool
+	optOutput        string
 	log              gglog.Logger
 )
 
