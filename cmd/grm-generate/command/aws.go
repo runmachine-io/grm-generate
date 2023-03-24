@@ -14,12 +14,18 @@ package command
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	"github.com/ghodss/yaml"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 
 	discover "github.com/anydotcloud/grm-generate/pkg/discover/aws"
+	"github.com/anydotcloud/grm-generate/pkg/model"
 )
 
 const (
@@ -60,13 +66,59 @@ func discoverAWS(
 		discover.WithServices(svcAlias),
 	)
 	resources, err := disco.DiscoverResources(ctx)
+	if err != nil {
+		return err
+	}
+	switch optOutput {
+	case "yaml":
+		return printResourceDefinitionsYAML(os.Stdout, resources)
+	case "table":
+		return printResourceDefinitionsTable(os.Stdout, resources)
+	}
+	return nil
+}
+
+func printResourceDefinitionsYAML(
+	w io.Writer,
+	resources []*model.ResourceDefinition,
+) error {
+	r := struct {
+		Resources []*model.ResourceDefinition
+	}{resources}
+	y, err := yaml.Marshal(&r)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(y)
+	return err
+}
+
+func printResourceDefinitionsTable(
+	w io.Writer,
+	resources []*model.ResourceDefinition,
+) error {
+	table := tablewriter.NewWriter(w)
+	headers := []string{
+		"Resource",
+		"Field",
+		"Type",
+		"Required?",
+	}
+	table.SetHeader(headers)
+	data := [][]string{}
 	for _, r := range resources {
-		log.Debug("found resource", "resource", r.Kind.Name)
+		rname := r.Kind.Name
 		for _, path := range r.GetFieldPaths() {
 			f := r.GetField(path)
-			t := f.Definition.Type
-			log.Debug("found field", "resource", r.Kind.Name, "path", path, "type", t.String())
+			typ := f.Definition.Type
+			data = append(data, []string{
+				rname, path.String(), typ.String(), strconv.FormatBool(f.Definition.IsRequired),
+			})
 		}
 	}
-	return err
+	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
+	table.SetRowLine(true)
+	table.AppendBulk(data)
+	table.Render()
+	return nil
 }

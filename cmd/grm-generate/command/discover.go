@@ -22,5 +22,12 @@ var discoverCmd = &cobra.Command{
 }
 
 func init() {
+	discoverCmd.PersistentFlags().StringVarP(
+		&optOutput, "output", "o", "table",
+		"Output in what format?",
+	)
+}
+
+func init() {
 	rootCmd.AddCommand(discoverCmd)
 }
