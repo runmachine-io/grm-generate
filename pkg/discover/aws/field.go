@@ -173,6 +173,9 @@ func fieldIsRequired(
 	if cfg != nil && cfg.IsRequired != nil {
 		return *cfg.IsRequired
 	}
+	if containerShape == nil {
+		return false
+	}
 	return lo.ContainsBy(
 		containerShape.Required, func(x string) bool {
 			return strings.EqualFold(x, fieldName)

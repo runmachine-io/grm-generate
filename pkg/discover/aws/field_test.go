@@ -65,16 +65,18 @@ func Test_VisitMemberShape(t *testing.T) {
 	assert := assert.New(t)
 	kind := model.NewKind("aws", "s3", "Bucket")
 	tests := []struct {
-		name     string
-		path     string
-		cfg      *config.ResourceConfig
-		shapeRef *awssdkmodel.ShapeRef
-		exp      *model.FieldDefinition
-		expPanic bool
+		name           string
+		path           string
+		cfg            *config.ResourceConfig
+		containerShape *awssdkmodel.Shape
+		shapeRef       *awssdkmodel.ShapeRef
+		exp            *model.FieldDefinition
+		expPanic       bool
 	}{
 		{
 			"nil config and nil shape panics",
 			"FieldName",
+			nil,
 			nil,
 			nil,
 			&model.FieldDefinition{
@@ -87,6 +89,7 @@ func Test_VisitMemberShape(t *testing.T) {
 			"Name",
 			flatNoTypeConfig.GetResourceConfig("Bucket"),
 			nil,
+			nil,
 			&model.FieldDefinition{
 				Type: schema.FieldTypeString,
 			},
@@ -96,6 +99,7 @@ func Test_VisitMemberShape(t *testing.T) {
 			"field with string type info and nil shape infers from config",
 			"Name",
 			flatWithTypeConfig.GetResourceConfig("Bucket"),
+			nil,
 			nil,
 			&model.FieldDefinition{
 				Type: schema.FieldTypeString,
@@ -107,6 +111,7 @@ func Test_VisitMemberShape(t *testing.T) {
 			"Tags.Value",
 			nestedPathConfig.GetResourceConfig("Repository"),
 			nil,
+			nil,
 			&model.FieldDefinition{
 				Type: schema.FieldTypeString,
 			},
@@ -116,6 +121,7 @@ func Test_VisitMemberShape(t *testing.T) {
 			"case-insensitive nested field path matching",
 			"tags.value",
 			nestedPathConfig.GetResourceConfig("Repository"),
+			nil,
 			nil,
 			&model.FieldDefinition{
 				Type: schema.FieldTypeString,
@@ -130,11 +136,17 @@ func Test_VisitMemberShape(t *testing.T) {
 		if test.expPanic {
 			assert.Panics(
 				func() {
-					aws.VisitMemberShape(ctx, rd, path, test.cfg, test.shapeRef)
+					aws.VisitMemberShape(
+						ctx, rd, path, test.cfg,
+						test.containerShape, test.shapeRef,
+					)
 				},
 			)
 		} else {
-			got := aws.VisitMemberShape(ctx, rd, path, test.cfg, test.shapeRef)
+			got := aws.VisitMemberShape(
+				ctx, rd, path, test.cfg,
+				test.containerShape, test.shapeRef,
+			)
 			assert.Equal(test.exp, got)
 		}
 	}
