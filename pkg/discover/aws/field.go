@@ -14,11 +14,13 @@ package aws
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/anydotcloud/grm/pkg/names"
 	"github.com/anydotcloud/grm/pkg/path/fieldpath"
 	"github.com/anydotcloud/grm/pkg/types/resource/schema"
 	awssdkmodel "github.com/aws/aws-sdk-go/private/model/api"
+	"github.com/samber/lo"
 
 	"github.com/anydotcloud/grm-generate/pkg/config"
 	"github.com/anydotcloud/grm-generate/pkg/model"
@@ -39,6 +41,7 @@ func VisitMemberShape(
 	// getMemberFieldDefinitions, we need to look up field config by
 	// accumulated field path.
 	cfg *config.ResourceConfig,
+	containerShape *awssdkmodel.Shape, // the "parent" or "containing" shape
 	shapeRef *awssdkmodel.ShapeRef,
 ) *model.FieldDefinition {
 	def := &model.FieldDefinition{
@@ -51,36 +54,33 @@ func VisitMemberShape(
 	// that any renamed fields have the "path" variable changed to the renamed
 	// path here.
 	fc, repath := cfg.GetFieldConfig(path)
-	if repath != nil {
-		path = repath
+	if fc != nil && fc.IsReadOnly != nil {
+		def.IsReadOnly = *fc.IsReadOnly
 	}
-	if fc != nil {
-		if fc.IsReadOnly != nil {
-			def.IsReadOnly = *fc.IsReadOnly
-		}
-		if fc.IsRequired != nil {
-			def.IsRequired = *fc.IsRequired
-		}
-		if fc.IsImmutable != nil {
-			def.IsImmutable = *fc.IsImmutable
-		}
-		if fc.IsSecret != nil {
-			def.IsSecret = *fc.IsSecret
-		}
-		if fc.Type != nil {
-			def.Type = schema.StringToFieldType(*fc.Type)
-		}
-		if fc.ElementType != nil {
-			def.ElementType = schema.StringToFieldType(*fc.ElementType)
-		}
-		if fc.KeyType != nil {
-			def.KeyType = schema.StringToFieldType(*fc.KeyType)
-		}
-		if fc.ValueType != nil {
-			def.ValueType = schema.StringToFieldType(*fc.ValueType)
-		}
+	def.IsRequired = fieldIsRequired(fc, path.Back(), containerShape)
+	if fc != nil && fc.IsImmutable != nil {
+		def.IsImmutable = *fc.IsImmutable
+	}
+	if fc != nil && fc.IsSecret != nil {
+		def.IsSecret = *fc.IsSecret
+	}
+	if fc != nil && fc.Type != nil {
+		def.Type = schema.StringToFieldType(*fc.Type)
+	}
+	if fc != nil && fc.ElementType != nil {
+		def.ElementType = schema.StringToFieldType(*fc.ElementType)
+	}
+	if fc != nil && fc.KeyType != nil {
+		def.KeyType = schema.StringToFieldType(*fc.KeyType)
+	}
+	if fc != nil && fc.ValueType != nil {
+		def.ValueType = schema.StringToFieldType(*fc.ValueType)
 	}
 
+	if repath != nil {
+		// The original field name was renamed...
+		path = repath
+	}
 	if def.Type == schema.FieldTypeUnknown {
 		if shapeRef == nil {
 			msg := fmt.Sprintf(
@@ -104,9 +104,6 @@ func VisitMemberShape(
 			panic(msg)
 		}
 		def.Type = fieldTypeFromShape(shape)
-		// this is a pointer to the "parent" containing Shape when the field being
-		// processed here is a structure or a list/map of structures.
-		// var containerShape *awssdkmodel.Shape = shape
 		switch shape.Type {
 		case "list", "map":
 			if shape.Type == "list" {
@@ -164,6 +161,25 @@ func VisitMemberShape(
 	return def
 }
 
+// fieldIsRequired determines whether the supplied field is required. The
+// supplied field config, if not nil, is used as an override. Otherwise, we
+// look in the supplied container shape's Required attribute for a
+// case-insensitive match for the supplied field name.
+func fieldIsRequired(
+	cfg *config.FieldConfig,
+	fieldName string,
+	containerShape *awssdkmodel.Shape,
+) bool {
+	if cfg != nil && cfg.IsRequired != nil {
+		return *cfg.IsRequired
+	}
+	return lo.ContainsBy(
+		containerShape.Required, func(x string) bool {
+			return strings.EqualFold(x, fieldName)
+		},
+	)
+}
+
 // fieldTypeFromShape returns the schema.FieldType from an aws-sdk-go
 // Shape.Type string.
 func fieldTypeFromShape(
@@ -204,7 +220,7 @@ func getMemberFieldDefinitions(
 		memberPath := containerPath.Copy()
 		memberPath.PushBack(cleanMemberNames.Camel)
 		memberShape := containerShape.MemberRefs[memberName]
-		memberDef := VisitMemberShape(ctx, rd, memberPath, cfg, memberShape)
+		memberDef := VisitMemberShape(ctx, rd, memberPath, cfg, containerShape, memberShape)
 		defs[cleanMemberNames.Camel] = memberDef
 	}
 	return defs
