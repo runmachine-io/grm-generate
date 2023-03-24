@@ -25,17 +25,17 @@ import (
 // API
 type ResourceDefinition struct {
 	// Config contains the resource-specific configuration options
-	Config *config.ResourceConfig
+	Config *config.ResourceConfig `json:"-"`
 	// Kind is the type of Resource
 	Kind Kind
-	// fields is a map, keyed by the **field path**, of Field objects
+	// Fields is a map, keyed by the **field path**, of Field objects
 	// representing a field in the Resource.
-	fields map[string]*Field
+	Fields map[string]*Field
 }
 
 // FieldPaths returns a sorted list of field paths for this resource.
 func (d *ResourceDefinition) GetFieldPaths() []*fieldpath.Path {
-	pathStrs := lo.Keys(d.fields)
+	pathStrs := lo.Keys(d.Fields)
 	sort.Strings(pathStrs)
 	res := make([]*fieldpath.Path, len(pathStrs))
 	for x, pathStr := range pathStrs {
@@ -46,7 +46,7 @@ func (d *ResourceDefinition) GetFieldPaths() []*fieldpath.Path {
 
 // GetField returns a Field given a field path. The search is case-insensitive
 func (d *ResourceDefinition) GetField(path *fieldpath.Path) *Field {
-	for pathStr, f := range d.fields {
+	for pathStr, f := range d.Fields {
 		if strings.EqualFold(path.String(), pathStr) {
 			return f
 		}
@@ -57,7 +57,7 @@ func (d *ResourceDefinition) GetField(path *fieldpath.Path) *Field {
 // AddField adds a new Field to the resource definition at the supplied field
 // path
 func (d *ResourceDefinition) AddField(f *Field) {
-	d.fields[f.Path.String()] = f
+	d.Fields[f.Path.String()] = f
 }
 
 // NewResourceDefinition returns a pointer to a new ResourceDefinition that
@@ -70,6 +70,6 @@ func NewResourceDefinition(
 	return &ResourceDefinition{
 		Config: cfg,
 		Kind:   kind,
-		fields: map[string]*Field{},
+		Fields: map[string]*Field{},
 	}
 }

@@ -3,7 +3,7 @@ module github.com/anydotcloud/grm-generate
 go 1.19
 
 require (
-	github.com/anydotcloud/grm v0.0.2
+	github.com/anydotcloud/grm v0.0.5
 	github.com/aws/aws-sdk-go v1.44.189
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/ghodss/yaml v1.0.0

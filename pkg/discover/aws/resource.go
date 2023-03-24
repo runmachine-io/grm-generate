@@ -87,7 +87,7 @@ func AddFieldsToResourceDefinition(
 				panic(msg)
 			}
 			path := fieldpath.FromString(memberName)
-			VisitMemberShape(ctx, rd, path, cfg, memberShapeRef)
+			VisitMemberShape(ctx, rd, path, cfg, inputShape, memberShapeRef)
 		}
 	}
 	return nil

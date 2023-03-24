@@ -21,9 +21,9 @@ import (
 type Field struct {
 	// Path is a "field path" that indicates where the field's value can be
 	// found within the Resource.
-	Path *fieldpath.Path
+	Path *fieldpath.Path `json:"-"` // ignored in JSON as map keys are paths
 	// Config contains the configuration options for this field
-	Config *config.FieldConfig
+	Config *config.FieldConfig `json:"-"`
 	// Definition contains metadata about the field's type
 	Definition *FieldDefinition
 }

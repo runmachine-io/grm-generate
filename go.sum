@@ -2,8 +2,8 @@ github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 h1:uSoVVbwJiQipAclBb
 github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7/go.mod h1:6zEj6s6u/ghQa61ZWa/C2Aw3RkjiTBOix7dkqa1VLIs=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 h1:kFOfPq6dUM1hTo4JG6LR5AXSUEsOjtdm0kw0FtQtMJA=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=
-github.com/anydotcloud/grm v0.0.2 h1:/Ooqw5pjkzCmiPCSP66uzIjbJCrCfMsZyc6RJbTLPts=
-github.com/anydotcloud/grm v0.0.2/go.mod h1:rtIb5ibUCPZ0jwc2UPIgldKORLJpIddPkZ5RROCG6Zc=
+github.com/anydotcloud/grm v0.0.5 h1:C0iVjImO/tpREwiLABAoJSL9thDqd5bVT4Kbf97F6J0=
+github.com/anydotcloud/grm v0.0.5/go.mod h1:rtIb5ibUCPZ0jwc2UPIgldKORLJpIddPkZ5RROCG6Zc=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/aws/aws-sdk-go v1.44.189 h1:9PBrjndH1uL5AN8818qI3duhQ4hgkMuLvqkJlg9MRyk=
